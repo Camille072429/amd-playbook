@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMD Operations Playbook</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a14; color: #e0e0e0; }
+  nav { position: fixed; top: 0; width: 100%; background: #0f0f1a; border-bottom: 1px solid #1e1e30; padding: 10px 30px; display: flex; gap: 18px; z-index: 100; align-items: center; flex-wrap: wrap; }
+  nav a { color: #888; text-decoration: none; font-size: 0.75em; font-weight: 500; padding: 4px 0; border-bottom: 2px solid transparent; }
+  nav a:hover { color: #ff6b35; border-bottom-color: #ff6b35; }
+  nav .brand { color: #ff6b35; font-weight: 700; font-size: 0.9em; margin-right: auto; }
+  .section { padding: 80px 50px 35px; max-width: 1100px; margin: 0 auto; }
+  .section-title { font-size: 1.7em; font-weight: 800; margin-bottom: 3px; color: #ff6b35; }
+  .section-sub { color: #666; font-size: 0.85em; margin-bottom: 20px; }
+  h2 { font-size: 1.15em; font-weight: 700; margin: 22px 0 8px; color: #ffb347; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 10px 0; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 10px 0; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 10px 0; }
+  .card { background: #151525; border-radius: 8px; padding: 14px 16px; border: 1px solid #1e1e30; }
+  .num { font-size: 1.7em; font-weight: 800; color: #ff6b35; }
+  .num.red { color: #ff2e63; } .num.green { color: #00c853; } .num.yellow { color: #ffb300; } .num.blue { color: #2196f3; }
+  .label { font-size: 0.75em; color: #777; margin-top: 2px; }
+  .small { font-size: 0.7em; color: #555; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 0.82em; }
+  th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid #151525; }
+  th { color: #ff6b35; font-weight: 600; font-size: 0.65em; text-transform: uppercase; letter-spacing: 1px; background: #0f0f1a; }
+  td { color: #ccc; }
+  .tag { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.6em; font-weight: 600; }
+  .tag.green { background: #00c85320; color: #00c853; border: 1px solid #00c85340; }
+  .tag.red { background: #ff2e6320; color: #ff2e63; border: 1px solid #ff2e6340; }
+  .tag.yellow { background: #ffb30020; color: #ffb300; border: 1px solid #ffb30040; }
+  .tag.blue { background: #2196f320; color: #2196f3; border: 1px solid #2196f340; }
+  .box { background: #151525; border-left: 4px solid #ff6b35; padding: 10px 14px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 0.82em; }
+  .box.green { border-left-color: #00c853; } .box.red { border-left-color: #ff2e63; } .box.blue { border-left-color: #2196f3; }
+  .script-box { background: #0a0a14; border: 1px solid #ff6b3540; border-radius: 8px; padding: 14px 18px; margin: 8px 0; font-style: italic; color: #bbb; line-height: 1.6; font-size: 0.85em; }
+  ul { padding-left: 18px; margin: 5px 0; }
+  ul li { margin: 3px 0; color: #999; font-size: 0.82em; }
+  .step { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; }
+  .step-num { background: #ff6b35; color: #fff; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.65em; flex-shrink: 0; }
+  .step-content { flex: 1; font-size: 0.82em; color: #bbb; }
+  .step-content strong { color: #ddd; }
+  .footer { text-align: center; color: #333; font-size: 0.65em; padding: 20px; border-top: 1px solid #0f0f1a; margin-top: 25px; }
+  hr { border: none; border-top: 1px solid #151525; margin: 18px 0; }
+  .hero { text-align: center; padding: 45px 20px 15px; }
+  .hero h1 { font-size: 2.2em; font-weight: 800; background: linear-gradient(135deg, #ff6b35, #ff2e63); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { color: #666; font-size: 0.9em; margin-top: 6px; }
+  .alert { background: #2a1a1e; border: 1px solid #ff2e6340; border-radius: 6px; padding: 12px 16px; margin: 10px 0; font-size: 0.82em; color: #ff8a80; }
+  .alert strong { color: #ff2e63; }
+  @media (max-width: 768px) { .section { padding: 70px 12px 20px; } nav { padding: 8px 10px; gap: 8px; } }
+</style>
+</head>
+<body>
+<nav>
+  <span class="brand">AMD Playbook</span>
+  <a href="#metrics">Metrics</a>
+  <a href="#calls">Calls</a>
+  <a href="#appointments">Appts</a>
+  <a href="#daily">Daily</a>
+  <a href="#followup">Follow-Up</a>
+  <a href="#scripts">Scripts</a>
+  <a href="#email">Email Touch</a>
+  <a href="#competitors">Competitors</a>
+  <a href="#protocol">Protocol</a>
+  <a href="#reactivation">Reactivation</a>
+</nav>
+
+<div class="hero">
+  <h1>AMD Operations Playbook</h1>
+  <p>CRM Report &amp; Strategy &mdash; July 2026 &nbsp;|&nbsp; American Dream Motors &mdash; Winchester, VA</p>
+</div>
+
+<!-- METRICS -->
+<div class="section" id="metrics">
+  <div class="section-title">1. CRM Overview</div>
+  <div class="section-sub">Data pulled from Twenty CRM API</div>
+  <div class="grid-4">
+    <div class="card"><div class="num blue">9,164</div><div class="label">Total People in CRM</div></div>
+    <div class="card"><div class="num">1,103</div><div class="label">Total Opportunities</div></div>
+    <div class="card"><div class="num blue">160</div><div class="label">New People in July</div></div>
+    <div class="card"><div class="num">33</div><div class="label">New People in June</div></div>
+  </div>
+  <div class="grid-4">
+    <div class="card"><div class="num green">19</div><div class="label">CarGurus Leads (in sample)</div><div class="small">CarGurus + HISTORICAL_CARGURUS</div></div>
+    <div class="card"><div class="num yellow">11</div><div class="label">Appts in Pipeline</div><div class="small">MEETING + QUALIFIED</div></div>
+    <div class="card"><div class="num">179</div><div class="label">Have Email (out of 200)</div></div>
+    <div class="card"><div class="num">122</div><div class="label">Have Phone (out of 200)</div></div>
+  </div>
+  <div class="alert">
+    <strong>Corrected:</strong> CarGurus count is 19 in the recent 200 opportunities (not 3). There are many more in the full 9,164 CRM records from older imports.
+  </div>
+</div>
+
+<hr>
+
+<!-- CALLS -->
+<div class="section" id="calls">
+  <div class="section-title">2. Inbound Calls &amp; Voicemail Protocol</div>
+  <div class="section-sub">How to handle every missed call</div>
+
+  <h2>Missed Call Procedure</h2>
+  <div class="grid-2">
+    <div class="card" style="border-left:3px solid #ff6b35;">
+      <strong style="color:#fff;">Step 1:</strong>
+      <div style="color:#bbb;font-size:0.85em;margin-top:4px;">Check CRM for the missed call. The number is already logged there. Look at who called and when.</div>
+    </div>
+    <div class="card" style="border-left:3px solid #ff6b35;">
+      <strong style="color:#fff;">Step 2:</strong>
+      <div style="color:#bbb;font-size:0.85em;margin-top:4px;">Call them back within <strong>5 minutes</strong>. If they answer, qualify and book.</div>
+    </div>
+    <div class="card" style="border-left:3px solid #2196f3;">
+      <strong style="color:#fff;">Step 3:</strong>
+      <div style="color:#bbb;font-size:0.85em;margin-top:4px;">No answer? Leave a voicemail with your callback number + website.</div>
+    </div>
+    <div class="card" style="border-left:3px solid #2196f3;">
+      <strong style="color:#fff;">Step 4:</strong>
+      <div style="color:#bbb;font-size:0.85em;margin-top:4px;">Send SMS with amdwinchester.com link. Log everything in CRM.</div>
+    </div>
+  </div>
+
+  <h2>Voicemail SLA</h2>
+  <div class="box green" style="font-size:0.9em;">
+    <strong>5-Minute Rule:</strong> Listen to every new voicemail within 5 minutes. Call back immediately. If no answer, send text with website link. Customers who leave voicemails are hot leads — don't let them wait.
+  </div>
+  <div class="script-box" style="border-color:#00c853;">
+    "Hi [Name], it's [Your Name] from AMD — I just got your voicemail. Call me at (540) 450-5373 or book a time at <strong>amdwinchester.com</strong>. Talk soon!"
+  </div>
+</div>
+
+<hr>
+
+<!-- APPOINTMENTS -->
+<div class="section" id="appointments">
+  <div class="section-title">3. Appointments</div>
+  <div class="section-sub">From recent 200 opportunities — 11 in pipeline</div>
+  <div class="grid-3">
+    <div class="card"><div class="num yellow">6</div><div class="label">MEETING Stage</div></div>
+    <div class="card"><div class="num yellow">5</div><div class="label">QUALIFIED</div></div>
+    <div class="card"><div class="num blue">11</div><div class="label">Total Appts</div></div>
+  </div>
+
+  <h2>Known Appointments</h2>
+  <table>
+    <tr><th>Name</th><th>Phone</th><th>Vehicle</th><th>Meeting</th><th>Action</th></tr>
+    <tr><td>Russell Myers</td><td>(802) 760-9821</td><td>2004 Ford Excursion</td><td><span class="tag yellow">No Date</span></td><td>Set date + confirm</td></tr>
+    <tr><td>Thomas Booking</td><td>(240) 967-8077</td><td>2009 Jeep Wrangler</td><td><span class="tag yellow">No Date</span></td><td>Call + send text</td></tr>
+    <tr><td>Danny Acosta</td><td>(571) 518-0257</td><td>2002 Chevy Silverado</td><td><span class="tag yellow">Jul 11</span></td><td>Check if showed up</td></tr>
+    <tr><td>Steven Doland</td><td>(717) 385-5087</td><td>1990 Chevy C/K1500</td><td><span class="tag yellow">Jul 13</span></td><td>Said "will call back"</td></tr>
+    <tr><td>Caller 0909</td><td>(917) 500-0909</td><td>2005 Ford Explorer</td><td><span class="tag yellow">No Date</span></td><td>Not contacted yet</td></tr>
+  </table>
+</div>
+
+<hr>
+
+<!-- DAILY ROUTINE -->
+<div class="section" id="daily">
+  <div class="section-title">4. Daily Routine — Hour by Hour</div>
+  <div class="section-sub">Command Center guidelines with targets</div>
+
+  <table>
+    <tr><th>Time</th><th>Task</th><th>Target</th><th>Details</th></tr>
+    <tr>
+      <td><span class="tag green">Hour 1</span></td>
+      <td>Check emails + texts + missed calls</td>
+      <td>Respond within 3-5 min</td>
+      <td>Answer all customer questions. Log responses.</td>
+    </tr>
+    <tr>
+      <td><span class="tag green">Hour 1</span></td>
+      <td>Call NEW leads</td>
+      <td>10-15 dials</td>
+      <td>Leave voicemail + text with amdwinchester.com link</td>
+    </tr>
+    <tr>
+      <td><span class="tag blue">Hour 2-3</span></td>
+      <td>Call SCREENING leads (follow-up Day 1-3)</td>
+      <td>15-20 dials</td>
+      <td>Per command center: 3-7 day follow-up cycle</td>
+    </tr>
+    <tr>
+      <td><span class="tag yellow">Hour 4</span></td>
+      <td>Text + Email follow-ups</td>
+      <td>Check all responses</td>
+      <td>Reply to texts. Email people with no phone number.</td>
+    </tr>
+    <tr>
+      <td><span class="tag yellow">Hour 4</span></td>
+      <td>Cancelled appointments follow-up</td>
+      <td>Reschedule within 24h</td>
+      <td>Call to re-book. Offer amdwinchester.com self-booking.</td>
+    </tr>
+    <tr>
+      <td><span class="tag">Hour 5</span></td>
+      <td>Confirm next day's appointments</td>
+      <td>100% confirmed</td>
+      <td>Call + send confirmation text</td>
+    </tr>
+    <tr>
+      <td><span class="tag">Hour 5</span></td>
+      <td>Log everything in CRM</td>
+      <td>100% EOD</td>
+      <td>Every call, text, email, outcome logged</td>
+    </tr>
+  </table>
+
+  <h2>Response Time Goals</h2>
+  <div class="grid-3">
+    <div class="card" style="border-top:3px solid #00c853;">
+      <div class="num green">3-5 min</div>
+      <div class="label">New lead response time</div>
+    </div>
+    <div class="card" style="border-top:3px solid #2196f3;">
+      <div class="num blue">3 days</div>
+      <div class="label">First follow-up cycle</div>
+    </div>
+    <div class="card" style="border-top:3px solid #ffb300;">
+      <div class="num yellow">7 days</div>
+      <div class="label">Second follow-up cycle</div>
+    </div>
+  </div>
+
+  <div class="box green">
+    <strong>Command Center Rule:</strong> Every new lead must be contacted within <strong>3-5 minutes</strong>. Follow up every <strong>3 days</strong> for interested leads, every <strong>7 days</strong> for cold leads. Cancelled appointments must be called within 24 hours to re-book.
+  </div>
+</div>
+
+<hr>
+
+<!-- FOLLOW-UP -->
+<div class="section" id="followup">
+  <div class="section-title">5. Follow-Up Cadence</div>
+  <div class="section-sub">3-7 day cycle per Command Center guidelines</div>
+
+  <h2>Interested Leads (follow-up every 3 days)</h2>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Day 1:</strong> Call. Voicemail? Leave script + text amdwinchester.com link</div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Day 4:</strong> Call again (different time). Voicemail + text again</div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Day 7:</strong> Email + text. "Still interested? Check amdwinchester.com"</div></div>
+
+  <h2>Cancelled Appointments (re-book within 24 hours)</h2>
+  <div class="step"><div class="step-num">1</div><div class="step-content">Call within 24 hours: "Sorry we missed you. Want to reschedule?"</div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content">Offer self-booking: "You can also pick a time at amdwinchester.com"</div></div>
+
+  <h2>New Leads (contact within 3-5 minutes)</h2>
+  <div class="step"><div class="step-num">1</div><div class="step-content">Call immediately. Sell the appointment, not the car.</div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content">Make them see the car in person. "You need to see it to feel it."</div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content">Book the appointment. Two-option close.</div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content">Send confirmation text + amdwinchester.com link for self-booking.</div></div>
+
+  <div class="box">
+    <strong>Rule:</strong> Don't sell over the phone. Your job is to get them to the lot. "I want you to see this car in person — photos don't do it justice. Let's set a time."
+  </div>
+</div>
+
+<hr>
+
+<!-- SCRIPTS -->
+<div class="section" id="scripts">
+  <div class="section-title">6. Voicemail &amp; SMS Scripts</div>
+
+  <h2>Voicemail Script</h2>
+  <div class="script-box">
+    "Hi [Name], this is [Your Name] from American Dream Motors in Winchester — I'm calling about the [Vehicle] you were interested in.<br><br>
+    Give us a call back at <strong>(540) 450-5373</strong>, or head over to <strong>amdwinchester.com</strong> to see our full inventory and book your own test drive anytime that works for you.<br><br>
+    I'll also send you a text with the link. Talk soon!"
+  </div>
+
+  <h2>Post-Voicemail SMS (within 60 seconds)</h2>
+  <div class="script-box" style="border-color:#2196f3;">
+    "Hi [Name], it's [Your Name] from American Dream Motors. See our inventory and book a test drive: <strong>amdwinchester.com</strong>. Or call us: (540) 450-5373. Let me know if you have any questions!"
+  </div>
+
+  <h2>After No Response — Website Link Text</h2>
+  <div class="script-box" style="border-color:#ffb300;">
+    "Hi [Name], just a friendly reminder — you can browse our full inventory and book a test drive anytime at <strong>amdwinchester.com</strong>. Lots of options available right now. Let me know if you have questions!"
+  </div>
+</div>
+
+<hr>
+
+<!-- EMAIL TOUCH -->
+<div class="section" id="email">
+  <div class="section-title">7. Email Touch — For People Without Phone</div>
+  <div class="section-sub">57 out of 200 have no phone number — reach them by email</div>
+
+  <div class="box blue">
+    <strong>Goal:</strong> Send an email to people who don't have a phone number in the CRM. Ask for their number and best time to call.
+  </div>
+
+  <h2>Email Script (No Phone Number)</h2>
+  <div class="script-box" style="border-color:#2196f3;">
+    <strong>Subject:</strong> Trying to reach you about the [Vehicle]<br><br>
+    "Hi [Name],<br><br>
+    This is [Your Name] from American Dream Motors in Winchester. I saw you were interested in the [Vehicle] and wanted to connect with you.<br><br>
+    <strong>What's the best number to reach you at?</strong> Just reply to this email with your phone number and a good time to call, and I'll reach out personally.<br><br>
+    In the meantime, you can check out our full inventory and book a test drive anytime at <strong>amdwinchester.com</strong>.<br><br>
+    Looking forward to connecting!<br>
+    - [Your Name]<br>
+    American Dream Motors<br>
+    (540) 450-5373"
+  </div>
+
+  <h2>Daily Email Check</h2>
+  <div class="box">
+    Every shift, check for email replies.<br>
+    <strong>If they reply with a number:</strong> Call them within 5 minutes.<br>
+    <strong>If they ask questions:</strong> Answer the question + redirect to book an appointment.<br>
+    <strong>Log every email response</strong> in CRM.
+  </div>
+</div>
+
+<hr>
+
+<!-- COMPETITORS -->
+<div class="section" id="competitors">
+  <div class="section-title">8. Competitor Comparison</div>
+  <div class="section-sub">AMD vs other used car dealers in Winchester, VA</div>
+
+  <h2>Known Competitors</h2>
+  <table>
+    <tr><th>Dealer</th><th>Location</th><th>Notes</th></tr>
+    <tr><td>Shentel Automotive</td><td>Winchester</td><td>Larger inventory, newer cars, higher prices</td></tr>
+    <tr><td>Eagle Auto Sales</td><td>Winchester</td><td>Budget-friendly, smaller lot</td></tr>
+    <tr><td>Martin's Auto Sales</td><td>Winchester</td><td>Used cars, limited warranty</td></tr>
+    <tr><td>Apple Auto Sales</td><td>Winchester</td><td>No-haggle pricing</td></tr>
+    <tr><td>CarMax Inova</td><td>Nearby</td><td>National chain, certified, higher prices</td></tr>
+  </table>
+
+  <h2>AMD's Strengths vs Competitors</h2>
+  <table>
+    <tr><th>Factor</th><th>AMD</th><th>Competitors</th></tr>
+    <tr><td><strong>90-Day Powertrain Warranty</strong></td><td><span class="tag green">Included</span></td><td>Most don't offer or charge extra</td></tr>
+    <tr><td><strong>5-Day Exchange Policy</strong></td><td><span class="tag green">Included</span></td><td>Rare — most are "as-is"</td></tr>
+    <tr><td><strong>Free CARFAX</strong></td><td><span class="tag green">Included</span></td><td>Often $40 extra</td></tr>
+    <tr><td><strong>Lifetime VA Inspections</strong></td><td><span class="tag green">Included</span></td><td>Not offered elsewhere</td></tr>
+    <tr><td><strong>1 Year Free Oil Changes</strong></td><td><span class="tag green">Included</span></td><td>Not standard</td></tr>
+    <tr><td><strong>Self-Booking Online</strong></td><td><span class="tag green">amdwinchester.com</span></td><td>Few offer this</td></tr>
+    <tr><td><strong>All Credit Welcome</strong></td><td><span class="tag green">Yes</span></td><td>Many turn down bad credit</td></tr>
+    <tr><td><strong>Truck-Focused Inventory</strong></td><td><span class="tag green">51% trucks</span></td><td>Most are mixed inventory</td></tr>
+    <tr><td><strong>Average Price</strong></td><td>~$12,700</td><td>Higher for similar models</td></tr>
+  </table>
+
+  <h2>AMD's Weaknesses</h2>
+  <ul>
+    <li><strong>Smaller inventory</strong> — ~72 units vs larger dealers</li>
+    <li><strong>Older vehicles</strong> — median year 2007, mileage 100-150K</li>
+    <li><strong>Location</strong> — 45 min from NOVA, need to convince out-of-town buyers</li>
+    <li><strong>Review/rating</strong> — lower Google rating than some competitors (Ahmad handles this)</li>
+    <li><strong>Website</strong> — newer, less traffic than established dealer sites</li>
+  </ul>
+
+  <h2>How to Beat Competitors</h2>
+  <div class="box green">
+    <strong>Lead with the Royal Treatment:</strong> "Every car at AMD comes with a 90-day warranty, 5-day exchange, free CARFAX, lifetime inspections, and a year of oil changes — all included. No other dealer in Winchester offers that. Come see the difference."
+  </div>
+  <div class="box blue">
+    <strong>Self-booking is your edge:</strong> Most dealers make you call or visit. AMD lets customers browse and book 24/7 at amdwinchester.com. Mention this on every call.
+  </div>
+</div>
+
+<hr>
+
+<!-- PROTOCOL -->
+<div class="section" id="protocol">
+  <div class="section-title">9. Inbound Call Protocol</div>
+  <div class="section-sub">Don't miss any leads</div>
+  <div class="step"><div class="step-num">1</div><div class="step-content">Missed inbound call? Check CRM — number is already logged. Call back within <strong>5 minutes</strong>.</div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content">Answered? Qualify, offer Royal Treatment, two-option close.</div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content">No answer? Leave voicemail with callback number + amdwinchester.com link.</div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-content">Send SMS with website link within 60 seconds.</div></div>
+  <div class="step"><div class="step-num">5</div><div class="step-content">Log outcome in CRM.</div></div>
+</div>
+
+<hr>
+
+<!-- REACTIVATION -->
+<div class="section" id="reactivation">
+  <div class="section-title">10. Lost &rarr; Warm Reactivation</div>
+  <div class="grid-3">
+    <div class="card"><div class="num red">177+</div><div class="label">Lost in CRM</div></div>
+    <div class="card"><div class="num yellow">1,434</div><div class="label">Dormant CarGurus</div></div>
+    <div class="card"><div class="num green">~15+</div><div class="label">Potential Appts at 1%</div></div>
+  </div>
+  <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Email blast:</strong> "New trucks in stock. Check them out at amdwinchester.com and book a test drive anytime."</div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Track clicks</strong> — they're warm again. Call within 24 hours.</div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Text non-responders:</strong> "Hey, we've got new trucks — amdwinchester.com"</div></div>
+</div>
+
+<hr>
+
+<!-- SUMMARY -->
+<div class="section">
+  <div class="section-title">Quick Reference</div>
+
+  <div class="grid-3">
+    <div class="card" style="border-top:3px solid #00c853;">
+      <strong style="color:#00c853;">GOAL</strong>
+      <div style="color:#bbb;font-size:0.8em;margin-top:5px;">Book appointments that SHOW UP.<br>Don't sell cars — sell test drives.</div>
+    </div>
+    <div class="card" style="border-top:3px solid #2196f3;">
+      <strong style="color:#2196f3;">KEY NUMBERS</strong>
+      <div style="color:#bbb;font-size:0.8em;margin-top:5px;">9,164 people in CRM<br>160 new this month<br>3-5 min response target</div>
+    </div>
+    <div class="card" style="border-top:3px solid #ff6b35;">
+      <strong style="color:#ff6b35;">WEBSITE</strong>
+      <div style="color:#bbb;font-size:0.8em;margin-top:5px;">amdwinchester.com<br>Self-booking + live inventory<br>Mention on every call</div>
+    </div>
+  </div>
+
+  <div class="box green" style="font-size:0.9em; text-align:center; margin-top:15px;">
+    <strong>Phone:</strong> (540) 450-5373 &nbsp;|&nbsp; <strong>Website:</strong> amdwinchester.com &nbsp;|&nbsp; <strong>CRM:</strong> twenty.amd.cars
+  </div>
+</div>
+
+<div class="footer">
+  American Dream Motors &mdash; 691 N Loudoun St, Winchester, VA &nbsp;|&nbsp; Updated July 17, 2026
+</div>
+
+</body>
+</html>
